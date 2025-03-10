@@ -12,9 +12,22 @@ body {
   margin: 2em;
 }
 
-.nav p {
+.nav-home {
+  display: flex;
+  flex-direction: row;
+  color: #254630;
+  font-size: 2.5em;
+  text-decoration: none;
+  align-items: anchor-center;
+
+}
+
+.nav-link {
+  display: flex;
   color: #fff;
   font-size: 1.5em;
+  text-decoration: none;
+  align-items: flex-end;
 }
 
 /* container on home page */
@@ -54,7 +67,6 @@ body {
 
 .smaller-container img {
   max-width: 20%;
-  /* Ensures image doesn't overflow */
   margin-left: auto;
   margin-right: auto;
 
@@ -63,6 +75,45 @@ body {
 .smaller-container span {
   color: #912121;
 }
+
+/* faq page */
+.faq-wrapper {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 0;
+  height: 88vh;
+  color: #fff;
+}
+
+.faq-container {
+  width: 90rem;
+  height: 50rem;
+  background-color: #F5F5F5;
+  border-radius: 3.125rem 3.125rem 0rem 0rem;
+  color: #000000;
+}
+
+.faq-container h2 {
+  font-size: 2em;
+  margin-top: 3.5em;
+  margin-left: 3.5em;
+}
+
+.faq-container ul {
+  list-style-type: disc;
+  padding-left: 2rem;
+  font-size: 1.5em;
+}
+
+.faq-container li {
+  flex-wrap: wrap;
+  width: 30em;
+  margin-bottom: 0.5rem;
+  margin-left: 5em;
+}
+
 
 
 @media (prefers-reduced-motion: no-preference) {}

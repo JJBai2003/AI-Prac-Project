@@ -5,7 +5,7 @@ import photo from './assets/photo.png'
 function App() {
   return (
     <div>
-      <NavBar></NavBar>
+      {/* <NavBar></NavBar> */}
       <div className="outer-container">
         <h1>Discover New Recipes</h1>
         <div className="container">
