@@ -1,38 +1,68 @@
-.App {
+body {
+  background-color: #E07A5F;
+  font-family: "Playfair Display SC";
+}
+
+/* nav bar */
+.nav {
+  display: flex;
+  flex-direction: row;
+  color: #254630;
+  justify-content: space-between;
+  margin: 2em;
+}
+
+.nav p {
+  color: #fff;
+  font-size: 1.5em;
+}
+
+/* container on home page */
+.outer-container {
+  padding-top: 3em;
+  justify-items: center;
+}
+
+.outer-container h1 {
+  color: #fff;
+  text-align: center;
+  font-size: 2.5em;
+  padding-bottom: .5em;
+}
+
+.container {
+  width: 47rem;
+  height: 25rem;
+  border-radius: 3rem;
+  background: #F5F5F5;
+  box-shadow: 0px 4px 4px 0px #00000040;
+  justify-items: center;
+  align-content: center;
+}
+
+.smaller-container {
+  width: 42rem;
+  height: 20rem;
+  border-radius: 1.25rem;
+  border: 1px dashed #9F9F9F;
+  background: #d6d6d600;
+  display: flex;
+  justify-content: center;
+  flex-direction: column;
   text-align: center;
 }
 
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
+.smaller-container img {
+  max-width: 20%;
+  /* Ensures image doesn't overflow */
+  margin-left: auto;
+  margin-right: auto;
+
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
+.smaller-container span {
+  color: #912121;
 }
 
-.App-header {
-  background-color: #282c34;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  font-size: calc(10px + 2vmin);
-  color: white;
-}
 
-.App-link {
-  color: #61dafb;
-}
-
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
+@media (prefers-reduced-motion: no-preference) {}
