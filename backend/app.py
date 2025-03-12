@@ -7,6 +7,10 @@ CORS(app)
 
 db = init_db()
 
+@app.route('/')
+def home():
+    return 'Hello, World!'
+
 @app.route('/add_recipe', methods=['POST'])
 def add_recipe_endpoint():
     data = request.get_json()
@@ -19,4 +23,4 @@ def get_recipes_endpoint():
     return jsonify({"recipes": recipes})
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=True, port=5000)
