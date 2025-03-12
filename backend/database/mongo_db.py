@@ -1,7 +1,7 @@
 from pymongo import MongoClient
 
 def init_db():
-    client = MongoClient("mongodb://localhost:1234/")
+    client = MongoClient("mongodb://localhost:27017/")
     db = client["recipe_ai"]
 
     if "users" not in db.list_collection_names():
