@@ -76,8 +76,12 @@ body {
   color: #912121;
 }
 
+.file-input {
+  display: none;
+}
+
 /* faq page */
-.faq-wrapper {
+.book-wrapper {
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -87,7 +91,7 @@ body {
   color: #fff;
 }
 
-.faq-container {
+.book-container {
   width: 90rem;
   height: 50rem;
   background-color: #F5F5F5;
@@ -95,23 +99,32 @@ body {
   color: #000000;
 }
 
-.faq-container h2 {
+.book-container h2 {
   font-size: 2em;
   margin-top: 3.5em;
   margin-left: 3.5em;
 }
 
-.faq-container ul {
+.book-container ul {
   list-style-type: disc;
   padding-left: 2rem;
   font-size: 1.5em;
 }
 
-.faq-container li {
+.book-container li {
   flex-wrap: wrap;
   width: 30em;
   margin-bottom: 0.5rem;
   margin-left: 5em;
+}
+
+.filter { 
+  background-color: #D9D9D9;
+  width: 16em;
+  height: 40em;
+  margin-top: 0;
+  border-radius: 3.125rem 0rem 0rem 0rem;
+
 }
 
 

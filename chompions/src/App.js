@@ -1,18 +1,17 @@
 import './App.css';
-import NavBar from './components/NavBar';
-import photo from './assets/photo.png'
+import photoimg from './assets/photo.png';
 
 function App() {
   return (
     <div>
-      {/* <NavBar></NavBar> */}
       <div className="outer-container">
         <h1>Discover New Recipes</h1>
         <div className="container">
-          <div className="smaller-container">
-            <img src={photo} alt="photo" />
-            <p>Drop an image of your refrigerator here or <span>browse</span></p>
-          </div>
+          <label htmlFor="file-upload" className="smaller-container">
+            <img src={photoimg} alt="img of a photo icon" />
+            <p><span>Click</span> to upload a photo of a refrigerator</p>
+            <input type="file" id="file-upload" name="file" className="file-input" />
+          </label>
         </div>
       </div>
     </div>

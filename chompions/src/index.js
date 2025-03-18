@@ -9,6 +9,7 @@ import './index.css';
 import NavBar from './components/NavBar';
 import App from './App';
 import Faq from './Faq';
+import RecipeBook from './RecipeBook'
 import reportWebVitals from './reportWebVitals';
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
@@ -20,6 +21,8 @@ root.render(
       <Routes>
         <Route exact path="/" element={<App />} />
         <Route path="/faq" element={<Faq />} />
+        <Route path="/recipebook" element={<RecipeBook />} />
+
       </Routes>
     </Router>
   </React.StrictMode>

@@ -1,14 +1,13 @@
-import NavBar from './components/NavBar';
 
 function Faq() {
   return (
     <>
-      <div className='faq-wrapper'>
+      <div className='book-wrapper'>
         <div>
           <h2>FAQ</h2>
 
         </div>
-        <div className='faq-container'>
+        <div className='book-container'>
           <h2>How to use 🍽️ : </h2>
           <ul>
             <li>Drop an image of your refrigerator or a picture of your ingredients</li>
