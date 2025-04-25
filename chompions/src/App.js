@@ -1,13 +1,14 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom"; // Import useNavigate
 import "./App.css";
 import photoimg from "./assets/photo.png";
-import RecipeBook from "./RecipeBook";
 
 function App() {
   const [recipes, setRecipes] = useState([]);
   const [ingredients, setIngredients] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const navigate = useNavigate(); 
 
   const handleFileUpload = async (e) => {
     const file = e.target.files[0];
@@ -32,6 +33,8 @@ function App() {
       const data = await response.json();
       setRecipes(data.recipes);
       setIngredients(data.ingredients);
+
+      navigate("/recipebook", { state: { recipes: data.recipes, detectedIngredients: data.ingredients } });
     } catch (err) {
       setError("Failed to process image. Please try again.");
       console.error("Upload error:", err);
@@ -64,7 +67,6 @@ function App() {
         {loading && <div className="loading-spinner">Processing...</div>}
         {error && <div className="error-message">{error}</div>}
       </div>
-      <RecipeBook recipes={recipes} detectedIngredients={ingredients} />
     </div>
   );
 }
