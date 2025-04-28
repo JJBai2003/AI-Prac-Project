@@ -1,5 +1,8 @@
-flask
-flask-cors
 pymongo
 python-dotenv
 werkzeug
+Flask==2.0.1
+torch
+torchvision==0.10.0
+pillow==8.2.0
+flask_cors==3.1.1
