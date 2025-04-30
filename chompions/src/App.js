@@ -21,7 +21,7 @@ function App() {
       const formData = new FormData();
       formData.append("file", file);
 
-      const response = await fetch("http://localhost:5001/api/upload", {
+      const response = await fetch("http://localhost:5001/api/predict", {
         method: "POST",
         body: formData,
       });
@@ -31,10 +31,17 @@ function App() {
       }
 
       const data = await response.json();
+      console.log(data.ingredients)
       setRecipes(data.recipes);
       setIngredients(data.ingredients);
 
-      navigate("/recipebook", { state: { recipes: data.recipes, detectedIngredients: data.ingredients } });
+    //   navigate("/recipebook", { state: { recipes: data.recipes, detectedIngredients: data.ingredients } });
+    // } catch (err) {
+    //   setError("Failed to process image. Please try again.");
+    //   console.error("Upload error:", err);
+    // } finally {
+    //   setLoading(false);
+    // }
     } catch (err) {
       setError("Failed to process image. Please try again.");
       console.error("Upload error:", err);
@@ -42,7 +49,6 @@ function App() {
       setLoading(false);
     }
   };
-
   return (
     <div>
       <div className="outer-container">

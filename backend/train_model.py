@@ -2,7 +2,8 @@
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from torch.utils.data import DataLoader
+import os
+from torch.utils.data import DataLoader, Dataset
 from torchvision import transforms, models
 from datasets import load_dataset
 from PIL import Image
@@ -22,46 +23,38 @@ def transform_image(image):
 
 def transform_mask(mask):
     return transforms.Compose([
-        transforms.Resize((128, 128), interpolation=transforms.InterpolationMode.NEAREST),
+        transforms.Resize((128, 128)),
         transforms.ToTensor()
     ])(mask).squeeze().long()
 
-# Dataset Class 
-class SegmentationDataset(torch.utils.data.Dataset):
-    def __init__(self, dataset_split):
-        self.dataset = dataset_split
-        # Verified keys 
-        self.image_key = "image"
-        self.mask_key = "label"
-        self.id_key = "id"
+class SegmentationDataset(Dataset):
+    def __init__(self, images_dir, masks_dir, image_transform=None, mask_transform=None):
+        self.images_dir = images_dir
+        self.masks_dir = masks_dir
+        self.image_transform = image_transform
+        self.mask_transform = mask_transform
+
+        self.image_filenames = sorted(os.listdir(self.images_dir))
+        self.mask_filenames = sorted(os.listdir(self.masks_dir))
+
+        assert len(self.image_filenames) == len(self.mask_filenames), "Mismatch between images and masks."
 
     def __len__(self):
-        return len(self.dataset)
+        return len(self.image_filenames)
 
     def __getitem__(self, idx):
-        item = self.dataset[idx]
-        try:
-            # Process image
-            image = transform_image(item[self.image_key].convert("RGB"))
-            
-            # Process mask - using 'label' key
-            mask = item[self.mask_key]
-            
-            # Convert mask to appropriate format
-            if isinstance(mask, np.ndarray):
-                mask = Image.fromarray(mask)
-            elif not isinstance(mask, Image.Image):
-                raise ValueError(f"Unexpected mask type: {type(mask)}")
-                
-            mask = transform_mask(mask.convert("L"))
-            
-            return image, mask
-            
-        except Exception as e:
-            print(f"\n⚠️ Error in item {idx} (ID: {item[self.id_key]}): {str(e)}")
-            print(f"Available keys: {item.keys()}")
-            print(f"Mask type: {type(mask) if 'mask' in locals() else 'N/A'}")
-            return None  # Skip problematic items
+        image_path = os.path.join(self.images_dir, self.image_filenames[idx])
+        mask_path = os.path.join(self.masks_dir, self.mask_filenames[idx])
+
+        image = Image.open(image_path).convert('RGB')
+        mask = Image.open(mask_path).convert('L')  # 'L' mode = single-channel grayscale
+
+        if self.image_transform:
+            image = self.image_transform(image)
+        if self.mask_transform:
+            mask = self.mask_transform(mask)
+
+        return image, mask
 
 # Custom collate function to filter out None values
 def collate_fn(batch):
