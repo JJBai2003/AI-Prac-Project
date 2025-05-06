@@ -39,7 +39,7 @@ from flask_cors import CORS  # Allow cross-origin requests
 # Load model
 def load_model():
     model = models.segmentation.deeplabv3_resnet50(weights=None, aux_loss=True)  
-    model.classifier[4] = nn.Conv2d(256, 103, kernel_size=(1, 1))  # 103 classes
+    model.classifier[4] = nn.Conv2d(256, 104, kernel_size=(1, 1))  # 104 classes
     model.load_state_dict(torch.load('food_segmentation_model.pth', map_location=torch.device('cpu')))
     model.eval()
     return model
@@ -190,7 +190,7 @@ def upload():
             print(avg_probs)
 
             # Set a threshold
-            threshold = 0.001  
+            threshold = 0.02 
 
             predicted_classes = (avg_probs > threshold).nonzero(as_tuple=True)[0]
 

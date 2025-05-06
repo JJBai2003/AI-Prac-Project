@@ -94,7 +94,6 @@ def main():
         aux_loss=True
     )
 
-    # Replace the classifier with the correct number of output classes
     model.classifier = DeepLabHead(2048, 104)  # Adjust num_classes
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
