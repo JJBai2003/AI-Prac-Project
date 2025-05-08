@@ -1,26 +1,44 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom"; // Import useNavigate
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import "./App.css";
 import photoimg from "./assets/photo.png";
 
 function App() {
-  const [recipes, setRecipes] = useState([]);
-  const [ingredients, setIngredients] = useState([]);
+  const [photos, setPhotos] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const navigate = useNavigate(); 
+  const navigate = useNavigate();
 
-  const handleFileUpload = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
+  const handleFileUpload = (e) => {
+    const files = Array.from(e.target.files);
+    const validPhotos = files.filter((file) => file.type.startsWith("image/"));
+    if (validPhotos.length < files.length) {
+      setError("Some files were not valid images and were skipped.");
+    }
+    setPhotos((prevPhotos) => [...prevPhotos, ...validPhotos]);
+  };
+
+  useEffect(() => {
+    return () => {
+      photos.forEach((photo) => URL.revokeObjectURL(photo));
+    };
+  }, [photos]);
+
+  const handleSubmit = async () => {
+    if (photos.length === 0) {
+      setError("Please upload at least one photo.");
+      return;
+    }
 
     setLoading(true);
     setError("");
 
     try {
       const formData = new FormData();
-      formData.append("file", file);
- 
+      photos.forEach((photo) => {
+        formData.append("file", photo);
+      });
+
       const response = await fetch("http://localhost:5001/api/predict", {
         method: "POST",
         body: formData,
@@ -31,33 +49,56 @@ function App() {
       }
 
       const data = await response.json();
-      console.log(data.ingredients)
-      setRecipes(data.recipes);
-      setIngredients(data.ingredients);
+      console.log("Raw backend response:", data);
 
-    //   navigate("/recipebook", { state: { recipes: data.recipes, detectedIngredients: data.ingredients } });
-    // } catch (err) {
-    //   setError("Failed to process image. Please try again.");
-    //   console.error("Upload error:", err);
-    // } finally {
-    //   setLoading(false);
-    // }
+      let ingredientsPerPhoto = [];
+
+      if (Array.isArray(data.ingredients) && Array.isArray(data.ingredients[0])) {
+        ingredientsPerPhoto = data.ingredients.map((ingredients, index) => ({
+          photoName: photos[index]?.name || `Photo ${index + 1}`,
+          ingredients: Array.isArray(ingredients) ? ingredients : [],
+        }));
+      } else if (Array.isArray(data.ingredients)) {
+        ingredientsPerPhoto = [
+          {
+            photoName: "All Photos",
+            ingredients: data.ingredients,
+          },
+        ];
+      }
+
+      const allIngredients = ingredientsPerPhoto.flatMap((item) => item.ingredients);
+
+      if (allIngredients.length === 0) {
+        setError("No ingredients detected. Please try uploading clearer photos.");
+        return;
+      }
+
+      navigate("/recipebook", {
+        state: {
+          recipes: data.recipes || [],
+          detectedIngredients: allIngredients,
+          ingredientsPerPhoto,
+        },
+      });
     } catch (err) {
-      setError("Failed to process image. Please try again.");
+      setError("Failed to process images. Please try again.");
       console.error("Upload error:", err);
     } finally {
       setLoading(false);
     }
   };
+
   return (
     <div>
       <div className="outer-container">
         <h1>Discover New Recipes</h1>
+
         <div className="container">
           <label htmlFor="file-upload" className="smaller-container">
             <img src={photoimg} alt="upload icon" />
             <p>
-              <span>Click</span> to upload a photo of a refrigerator
+              <span>Click</span> to upload photos of your refrigerator
             </p>
             <input
               type="file"
@@ -65,12 +106,23 @@ function App() {
               name="file"
               className="file-input"
               onChange={handleFileUpload}
-              disabled={loading}
+              multiple
             />
           </label>
         </div>
 
-        {loading && <div className="loading-spinner">Processing...</div>}
+        <div className="uploaded-photos">
+          {photos.map((photo, index) => (
+            <div key={index} className="photo-preview">
+              <img src={URL.createObjectURL(photo)} alt={`Uploaded ${index + 1}`} />
+            </div>
+          ))}
+        </div>
+
+        <button onClick={handleSubmit} disabled={loading} className="submit-button">
+          {loading ? "Processing..." : "Submit Photos"}
+        </button>
+
         {error && <div className="error-message">{error}</div>}
       </div>
     </div>

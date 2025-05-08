@@ -1,17 +1,10 @@
-import React, { useState } from "react";
+import React from "react";
 import { useLocation } from "react-router-dom";
-import Modal from "./components/Modal";
 import "./RecipeBook.css";
 
 function RecipeBook() {
   const location = useLocation();
   const { recipes = [], detectedIngredients = [] } = location.state || {};
-
-  const [isModalOpen, setIsModalOpen] = useState(false);
-
-  const toggleModal = () => {
-    setIsModalOpen(!isModalOpen);
-  };
 
   return (
     <div className="book-wrapper">
@@ -19,6 +12,7 @@ function RecipeBook() {
         <h2>Recipe Book</h2>
       </div>
       <div className="book-container">
+        {/* Detected Ingredients Section */}
         <div className="ingredients-section">
           <h3>Detected Ingredients:</h3>
           <ul>
@@ -31,11 +25,17 @@ function RecipeBook() {
             )}
           </ul>
         </div>
+
+        {/* Recipes Section */}
         <div className="recipes-section">
           <h3>Recipes:</h3>
           <ul>
             {recipes.length > 0 ? (
-              recipes.map((recipe, index) => <li key={index}>{recipe}</li>)
+              recipes.map((recipe, index) => (
+                <li key={index}>
+                  <strong>{recipe.title}</strong>: {recipe.ingredients.join(", ")}
+                </li>
+              ))
             ) : (
               <p>No recipes found.</p>
             )}
