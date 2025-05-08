@@ -51,32 +51,39 @@ function App() {
       const data = await response.json();
       console.log("Raw backend response:", data);
 
-      let ingredientsPerPhoto = [];
+      const { generated_recipe, ingredients } = data;
 
-      if (Array.isArray(data.ingredients) && Array.isArray(data.ingredients[0])) {
-        ingredientsPerPhoto = data.ingredients.map((ingredients, index) => ({
+      let ingredientsPerPhoto = [];
+      if (Array.isArray(ingredients) && Array.isArray(ingredients[0])) {
+        ingredientsPerPhoto = ingredients.map((ingredients, index) => ({
           photoName: photos[index]?.name || `Photo ${index + 1}`,
           ingredients: Array.isArray(ingredients) ? ingredients : [],
         }));
-      } else if (Array.isArray(data.ingredients)) {
+      } else if (Array.isArray(ingredients)) {
         ingredientsPerPhoto = [
           {
             photoName: "All Photos",
-            ingredients: data.ingredients,
+            ingredients: ingredients,
           },
         ];
       }
 
-      const allIngredients = ingredientsPerPhoto.flatMap((item) => item.ingredients);
+      const allIngredients = ingredientsPerPhoto.flatMap(
+        (item) => item.ingredients
+      );
 
       if (allIngredients.length === 0) {
-        setError("No ingredients detected. Please try uploading clearer photos.");
+        setError(
+          "No ingredients detected. Please try uploading clearer photos."
+        );
         return;
       }
+      console.log("this is ", generated_recipe);
 
       navigate("/recipebook", {
         state: {
           recipes: data.recipes || [],
+          generatedRecipe: generated_recipe,
           detectedIngredients: allIngredients,
           ingredientsPerPhoto,
         },
@@ -93,7 +100,6 @@ function App() {
     <div>
       <div className="outer-container">
         <h1>Discover New Recipes</h1>
-
         <div className="container">
           <label htmlFor="file-upload" className="smaller-container">
             <img src={photoimg} alt="upload icon" />
@@ -110,16 +116,21 @@ function App() {
             />
           </label>
         </div>
-
         <div className="uploaded-photos">
           {photos.map((photo, index) => (
             <div key={index} className="photo-preview">
-              <img src={URL.createObjectURL(photo)} alt={`Uploaded ${index + 1}`} />
+              <img
+                src={URL.createObjectURL(photo)}
+                alt={`Uploaded ${index + 1}`}
+              />
             </div>
           ))}
         </div>
-
-        <button onClick={handleSubmit} disabled={loading} className="submit-button">
+        <button
+          onClick={handleSubmit}
+          disabled={loading}
+          className="submit-button"
+        >
           {loading ? "Processing..." : "Submit Photos"}
         </button>
 

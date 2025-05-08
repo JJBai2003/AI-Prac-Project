@@ -59,3 +59,17 @@
 .recipe-item:last-child {
   border-bottom: none;
 }
+
+.generated-recipe {
+  background-color: #f9f9f9;
+  padding: 1em;
+  white-space: pre-wrap;
+  word-break: break-word;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  font-family: "Courier New", Courier, monospace;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
