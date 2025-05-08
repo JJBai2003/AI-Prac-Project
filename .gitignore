@@ -12,8 +12,7 @@ env3
 
 # production
 /build
-backend/checkpoint-675/
-backend/sampled_recipes.csv  
+
 
 # misc
 .DS_Store
