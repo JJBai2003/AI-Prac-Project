@@ -144,14 +144,19 @@ def main():
             images, masks = images.to(device), masks.to(device)
 
             optimizer.zero_grad()
-            with autocast():
+            if torch.cuda.is_available():
+                with autocast():
+                    outputs = model(images)['out']
+                    loss = criterion(outputs, masks)
+                scaler.scale(loss).backward()
+                scaler.step(optimizer)
+                scaler.update()
+            else:
                 outputs = model(images)['out']
                 loss = criterion(outputs, masks)
+                loss.backward()
+                optimizer.step()
 
-            scaler.scale(loss).backward()
-            scaler.step(optimizer)
-            scaler.update()
-            running_loss += loss.item()
 
             if batch_idx % 10 == 0:
                 print(f"Epoch {epoch+1}/{num_epochs} | Batch {batch_idx} | Loss: {loss.item():.4f}")
