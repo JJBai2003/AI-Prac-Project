@@ -1,3 +1,4 @@
 *.pth filter=lfs diff=lfs merge=lfs -text
 backend/sampled_recipes.csv filter=lfs diff=lfs merge=lfs -text
 backend/checkpoint-675/* filter=lfs diff=lfs merge=lfs -text
+backend/checkpoint-2250/* filter=lfs diff=lfs merge=lfs -text
