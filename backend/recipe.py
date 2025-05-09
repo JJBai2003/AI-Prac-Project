@@ -23,7 +23,7 @@ def generate_recipe(ingredients_list, max_length=300):
 
     output = model.generate(
         inputs.input_ids,
-        # max_length=max_length,
+        max_length=max_length,
         num_return_sequences=1,
         no_repeat_ngram_size=2,
         temperature=0.95,
