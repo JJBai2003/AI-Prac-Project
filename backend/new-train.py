@@ -106,7 +106,7 @@ def main():
     train_loader = DataLoader(train_dataset, batch_size=8, shuffle=True, collate_fn=collate_fn)
     val_loader = DataLoader(val_dataset, batch_size=8, shuffle=False, collate_fn=collate_fn)
 
-    # Model: DeepLabV3 + ResNet101
+
     model = models.segmentation.deeplabv3_resnet101(
         weights=models.segmentation.DeepLabV3_ResNet101_Weights.COCO_WITH_VOC_LABELS_V1,
         aux_loss=True
