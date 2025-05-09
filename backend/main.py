@@ -10,7 +10,6 @@ import os
 import random
 from transformers import GPT2Tokenizer, GPT2LMHeadModel
 
-# Load model for food segmentation
 def load_model():
     model = models.segmentation.deeplabv3_resnet50(weights=None, aux_loss=True)
     model.classifier[4] = nn.Conv2d(256, 104, kernel_size=(1, 1))
@@ -18,7 +17,6 @@ def load_model():
     model.eval()
     return model
 
-# Load GPT2 model for recipe generation
 def load_gpt2_model():
     model_path = './checkpoint-675'
     tokenizer = GPT2Tokenizer.from_pretrained(model_path)
@@ -29,18 +27,15 @@ def load_gpt2_model():
     model.to(device)
     return model, tokenizer, device
 
-# Instantiate models
 model = load_model()
 gpt2_model, gpt2_tokenizer, gpt2_device = load_gpt2_model()
 
-# Image transformation for segmentation model
 transform = transforms.Compose([
     transforms.Resize((128, 128)),
     transforms.ToTensor(),
     transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
 ])
 
-# Ingredient class-id mapping (to be used with segmentation model output)
 class_id_to_name = {
     0: "background", 1: "candy", 2: "egg tart", 3: "french fries", 4: "chocolate", 5: "biscuit",
     6: "popcorn", 7: "pudding", 8: "ice cream", 9: "cheese butter", 10: "cake", 11: "wine",
@@ -63,21 +58,14 @@ class_id_to_name = {
     102: "salad", 103: "other ingredients"
 }
 
-# MongoDB connection
 client = MongoClient(os.getenv("MONGODB_URI", "mongodb://localhost:27017"))
 db = client["food_db"]
 recipes_collection = db["recipes"]
 
-# Flask app setup
 app = Flask(__name__)
 CORS(app)
 
-# Function to generate a recipe from ingredients list using GPT2
 def generate_recipe(ingredients_list, max_length=300):
-    """
-    Generate a recipe given a list of ingredients.
-    Returns the generated text as a string.
-    """
     prompt = f"Ingredients: {', '.join(ingredients_list)}\nRecipe Name:"
     inputs = gpt2_tokenizer(prompt, return_tensors="pt").to(gpt2_device)
 
@@ -93,10 +81,8 @@ def generate_recipe(ingredients_list, max_length=300):
         eos_token_id=gpt2_tokenizer.eos_token_id
     )
 
-    generated_text = gpt2_tokenizer.batch_decode(output, skip_special_tokens=True)[0]
-    return generated_text
+    return gpt2_tokenizer.decode(output[0], skip_special_tokens=True)
 
-# Endpoint for uploading image and getting ingredients and recipes
 @app.route('/api/predict', methods=['POST'])
 def upload():
     if 'file' not in request.files:
@@ -109,7 +95,6 @@ def upload():
     try:
         all_ingredients = []
 
-        # Process the uploaded images and extract ingredients
         for file in files:
             file_bytes = file.stream.read()
             img = Image.open(io.BytesIO(file_bytes)).convert('RGB')
@@ -129,23 +114,26 @@ def upload():
                     for cid in class_ids
                     if class_id_to_name.get(cid, f"unknown_{cid}") != "background"
                 ]
-                all_ingredients.append(ingredients)
+                all_ingredients.extend(ingredients)
 
-        # Flatten ingredients list and remove duplicates
-        flat_ingredients = sorted(set(i for sub in all_ingredients for i in sub))
+        flat_ingredients = sorted(set(all_ingredients))
         filtered_ingredients = [
-    item for item in flat_ingredients if item.lower() != "other ingredients"
-]
+            item for item in flat_ingredients if item.lower() != "other ingredients"
+        ]
 
-        subset = random.sample(flat_ingredients, min(len(flat_ingredients), 3))
+        print("All detected ingredients:", filtered_ingredients)
+
+        subset_size = min(len(filtered_ingredients), 3)
+        subset = random.sample(filtered_ingredients, subset_size) if subset_size > 0 else []
         generated_recipe = generate_recipe(subset)
-        print(subset)
-        return jsonify({
-                "ingredients": subset,
-                "generated_recipe": generated_recipe.strip()
-            })
+        print("Subset used for recipe generation:", subset)
 
-     
+        return jsonify({
+            "ingredients": filtered_ingredients,
+            "generated_recipe": generated_recipe.strip() if generated_recipe else "No recipe generated",
+            "subset_used": subset
+        })
+
     except Exception as e:
         return jsonify({'error': str(e)})
 
