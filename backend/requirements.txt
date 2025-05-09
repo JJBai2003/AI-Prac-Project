@@ -8,3 +8,4 @@ pillow
 flask_cors
 numpy<2
 transformers
+datasets
