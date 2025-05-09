@@ -18,7 +18,7 @@ def load_model():
     return model
 
 def load_gpt2_model():
-    model_path = './checkpoint-675'
+    model_path = './checkpoint-2250'
     tokenizer = GPT2Tokenizer.from_pretrained(model_path)
     tokenizer.pad_token = tokenizer.eos_token
     model = GPT2LMHeadModel.from_pretrained(model_path)
