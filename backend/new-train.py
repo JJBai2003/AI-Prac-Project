@@ -11,14 +11,12 @@ import ssl
 from torch.cuda.amp import GradScaler, autocast
 from torch.optim.lr_scheduler import StepLR
 
-
 ssl._create_default_https_context = ssl._create_unverified_context
 
-
-UNIQUE_LABELS = list(range(104))  
+# === Dataset Setup ===
+UNIQUE_LABELS = list(range(104))
 label_mapping = {label: idx for idx, label in enumerate(UNIQUE_LABELS)}
 num_classes = len(label_mapping)
-
 
 def transform_image(image):
     return transforms.Compose([
@@ -31,18 +29,16 @@ def transform_image(image):
                              std=[0.229, 0.224, 0.225])
     ])(image)
 
-
 def transform_mask(mask):
     mask = mask.convert("L")
     mask = transforms.Resize((128, 128), interpolation=transforms.InterpolationMode.NEAREST)(mask)
     mask = np.array(mask)
 
-    remapped = np.full_like(mask, fill_value=255)  
+    remapped = np.full_like(mask, fill_value=255)  # ignore index
     for original, new in label_mapping.items():
         remapped[mask == original] = new
 
     return torch.tensor(remapped, dtype=torch.long)
-
 
 class SegmentationDataset(Dataset):
     def __init__(self, hf_dataset, image_transform=None, mask_transform=None):
@@ -69,12 +65,10 @@ class SegmentationDataset(Dataset):
             print(f"Skipping item {idx} due to error: {e}")
             return None
 
-# === Collate to skip bad samples ===
 def collate_fn(batch):
     batch = [item for item in batch if item is not None]
     return torch.utils.data.default_collate(batch)
 
-# === Save and load checkpoint ===
 def save_checkpoint(model, optimizer, epoch, loss, filename='checkpoint.pth'):
     torch.save({
         'epoch': epoch,
@@ -90,38 +84,52 @@ def load_checkpoint(model, optimizer, filename='checkpoint.pth'):
     optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
     epoch = checkpoint['epoch']
     loss = checkpoint['loss']
-    print(f"Resumed training from epoch {epoch}")
-    return model, optimizer, epoch
+    print(f"Resumed training from epoch {epoch + 1}")
+    return model, optimizer, epoch + 1  # resume from next epoch
 
+def pixel_accuracy(preds, labels, ignore_index=255):
+    preds = torch.argmax(preds, dim=1)
+    valid = labels != ignore_index
+    correct = (preds == labels) & valid
+    return correct.sum().item() / valid.sum().item()
+
+def mean_iou(preds, labels, num_classes, ignore_index=255):
+    preds = torch.argmax(preds, dim=1)
+    ious = []
+    for cls in range(num_classes):
+        if cls == ignore_index:
+            continue
+        pred_inds = (preds == cls)
+        target_inds = (labels == cls)
+        intersection = (pred_inds & target_inds).sum().item()
+        union = (pred_inds | target_inds).sum().item()
+        if union == 0:
+            continue
+        ious.append(intersection / union)
+    return np.mean(ious) if ious else 0.0
 
 def main():
-    # Load dataset
     dataset = load_dataset("EduardoPacheco/FoodSeg103")
     print("Train keys:", dataset['train'].features)
     print("Sample keys:", dataset['train'][0].keys())
 
-   
     train_dataset = SegmentationDataset(dataset['train'], transform_image, transform_mask)
     val_dataset = SegmentationDataset(dataset['validation'], transform_image, transform_mask)
     train_loader = DataLoader(train_dataset, batch_size=8, shuffle=True, collate_fn=collate_fn)
     val_loader = DataLoader(val_dataset, batch_size=8, shuffle=False, collate_fn=collate_fn)
-
 
     model = models.segmentation.deeplabv3_resnet101(
         weights=models.segmentation.DeepLabV3_ResNet101_Weights.COCO_WITH_VOC_LABELS_V1,
         aux_loss=True
     )
     model.classifier = DeepLabHead(2048, num_classes)
-
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model.to(device)
 
- 
     criterion = nn.CrossEntropyLoss(ignore_index=255)
     optimizer = optim.Adam(model.parameters(), lr=1e-4)
     scheduler = StepLR(optimizer, step_size=5, gamma=0.5)
     scaler = GradScaler()
-
 
     checkpoint_path = 'checkpoint.pth'
     start_epoch = 0
@@ -129,7 +137,6 @@ def main():
         model, optimizer, start_epoch = load_checkpoint(model, optimizer, checkpoint_path)
     except FileNotFoundError:
         print("No checkpoint found, starting from scratch.")
-
 
     num_epochs = 20
     patience = 5
@@ -142,8 +149,8 @@ def main():
 
         for batch_idx, (images, masks) in enumerate(train_loader):
             images, masks = images.to(device), masks.to(device)
-
             optimizer.zero_grad()
+
             if torch.cuda.is_available():
                 with autocast():
                     outputs = model(images)['out']
@@ -157,6 +164,7 @@ def main():
                 loss.backward()
                 optimizer.step()
 
+            running_loss += loss.item()
 
             if batch_idx % 10 == 0:
                 print(f"Epoch {epoch+1}/{num_epochs} | Batch {batch_idx} | Loss: {loss.item():.4f}")
@@ -169,16 +177,24 @@ def main():
         # === Validation ===
         model.eval()
         val_loss = 0.0
+        acc_total, iou_total = 0.0, 0.0
         with torch.no_grad():
             for val_images, val_masks in val_loader:
                 val_images, val_masks = val_images.to(device), val_masks.to(device)
                 outputs = model(val_images)['out']
                 loss = criterion(outputs, val_masks)
                 val_loss += loss.item()
-        val_loss /= len(val_loader)
-        print(f"Validation Loss after epoch {epoch + 1}: {val_loss:.4f}")
 
-        # === Early stopping ===
+                acc_total += pixel_accuracy(outputs, val_masks)
+                iou_total += mean_iou(outputs, val_masks, num_classes)
+
+        val_loss /= len(val_loader)
+        acc_total /= len(val_loader)
+        iou_total /= len(val_loader)
+
+        print(f"Validation Loss after epoch {epoch + 1}: {val_loss:.4f}")
+        print(f"Pixel Accuracy: {acc_total:.4f} | mIoU: {iou_total:.4f}")
+
         if val_loss < best_val_loss:
             best_val_loss = val_loss
             epochs_without_improvement = 0
@@ -189,7 +205,6 @@ def main():
         if epochs_without_improvement >= patience:
             print(f"Early stopping triggered. Stopping at epoch {epoch + 1}.")
             break
-
 
     torch.save(model.state_dict(), 'deeplabv3_Foodseg103.pth')
     print("🎉 Training completed and model saved!")
