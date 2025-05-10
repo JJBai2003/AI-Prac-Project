@@ -8,6 +8,10 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const navigate = useNavigate();
+  useEffect(() => {
+    setPhotos([]);
+    setError("");
+  }, []);
 
   const handleFileUpload = (e) => {
     const files = Array.from(e.target.files);

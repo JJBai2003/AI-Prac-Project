@@ -73,3 +73,16 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
+.go-back-button {
+  margin-top: 20px;
+  padding: 10px 20px;
+  background-color: #357edd;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.go-back-button:hover {
+  background-color: #285bb5;
+}

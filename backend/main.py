@@ -1,21 +1,30 @@
 from flask import Flask, request, jsonify
 import torch
 import torch.nn as nn
-from torchvision import models, transforms
+from torchvision import transforms
+from torchvision.models.segmentation import deeplabv3_resnet101
+from torchvision.models.segmentation.deeplabv3 import DeepLabHead
+
 from PIL import Image
 import io
 from flask_cors import CORS
-from pymongo import MongoClient
+# from pymongo import MongoClient
 import os
 import random
 from transformers import GPT2Tokenizer, GPT2LMHeadModel
+import ssl
+
+
+ssl._create_default_https_context = ssl._create_unverified_context
+
 
 def load_model():
-    model = models.segmentation.deeplabv3_resnet50(weights=None, aux_loss=True)
-    model.classifier[4] = nn.Conv2d(256, 104, kernel_size=(1, 1))
-    model.load_state_dict(torch.load('food_segmentation_model.pth', map_location=torch.device('cpu')))
+    model = deeplabv3_resnet101(weights=None, aux_loss=True)
+    model.classifier = DeepLabHead(2048, 104)
+    model.load_state_dict(torch.load('deeplabv3_Foodseg103.pth', map_location=torch.device('cpu')))
     model.eval()
     return model
+
 
 def load_gpt2_model():
     model_path = './checkpoint-2250'
@@ -30,14 +39,15 @@ def load_gpt2_model():
 model = load_model()
 gpt2_model, gpt2_tokenizer, gpt2_device = load_gpt2_model()
 
+
 transform = transforms.Compose([
     transforms.Resize((128, 128)),
     transforms.ToTensor(),
     transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
 ])
 
-class_id_to_name = {
-    0: "background", 1: "candy", 2: "egg tart", 3: "french fries", 4: "chocolate", 5: "biscuit",
+
+class_id_to_name = {    0: "background", 1: "candy", 2: "egg tart", 3: "french fries", 4: "chocolate", 5: "biscuit",
     6: "popcorn", 7: "pudding", 8: "ice cream", 9: "cheese butter", 10: "cake", 11: "wine",
     12: "milkshake", 13: "coffee", 14: "juice", 15: "milk", 16: "tea", 17: "almond", 18: "red beans",
     19: "cashew", 20: "dried cranberries", 21: "soy", 22: "walnut", 23: "peanut", 24: "egg",
@@ -55,17 +65,18 @@ class_id_to_name = {
     90: "snow peas", 91: "cabbage", 92: "bean sprouts", 93: "onion", 94: "pepper",
     95: "green beans", 96: "French beans", 97: "king oyster mushroom", 98: "shiitake",
     99: "enoki mushroom", 100: "oyster mushroom", 101: "white button mushroom",
-    102: "salad", 103: "other ingredients"
-}
+    102: "salad", 103: "other ingredients" }  # ← Paste your full 104-class dictionary here
 
-client = MongoClient(os.getenv("MONGODB_URI", "mongodb://localhost:27017"))
-db = client["food_db"]
-recipes_collection = db["recipes"]
+# === MongoDB (optional) ===
+# client = MongoClient(os.getenv("MONGODB_URI", "mongodb://localhost:27017"))
+# db = client["food_db"]
+# recipes_collection = db["recipes"]
 
 app = Flask(__name__)
 CORS(app)
 
-def generate_recipe(ingredients_list, max_length=300):
+
+def generate_recipe(ingredients_list, max_length=512):
     prompt = f"Ingredients: {', '.join(ingredients_list)}\nRecipe Name:"
     inputs = gpt2_tokenizer(prompt, return_tensors="pt").to(gpt2_device)
 
@@ -83,6 +94,7 @@ def generate_recipe(ingredients_list, max_length=300):
 
     return gpt2_tokenizer.decode(output[0], skip_special_tokens=True)
 
+
 @app.route('/api/predict', methods=['POST'])
 def upload():
     if 'file' not in request.files:
@@ -98,40 +110,32 @@ def upload():
         for file in files:
             file_bytes = file.stream.read()
             img = Image.open(io.BytesIO(file_bytes)).convert('RGB')
-            img = transform(img).unsqueeze(0)
+            img_tensor = transform(img).unsqueeze(0)
 
             with torch.no_grad():
-                output = model(img)['out']
-                probs = torch.softmax(output.squeeze(0), dim=0)
-                avg_probs = probs.mean(dim=(1, 2))
+                output = model(img_tensor)['out']
+                pred_classes = torch.argmax(output.squeeze(0), dim=0)
+                class_ids = torch.unique(pred_classes).tolist()
 
-                threshold = 0.02
-                predicted_classes = (avg_probs > threshold).nonzero(as_tuple=True)[0]
-                class_ids = predicted_classes.tolist()
+                # Filter out small/noisy areas and background (0)
+                for cid in class_ids:
+                    if cid == 0:  # background
+                        continue
+                    pixel_area = (pred_classes == cid).sum().item()
+                    if pixel_area > 100:  # ignore small regions
+                        name = class_id_to_name.get(cid)
+                        if name and name != "other ingredients":
+                            all_ingredients.append(name)
 
-                ingredients = [
-                    class_id_to_name.get(cid, f"unknown_{cid}")
-                    for cid in class_ids
-                    if class_id_to_name.get(cid, f"unknown_{cid}") != "background"
-                ]
-                all_ingredients.extend(ingredients)
-
-        flat_ingredients = sorted(set(all_ingredients))
-        filtered_ingredients = [
-            item for item in flat_ingredients if item.lower() != "other ingredients"
-        ]
-
-        print("All detected ingredients:", filtered_ingredients)
-
+        filtered_ingredients = sorted(set(all_ingredients))
         subset_size = min(len(filtered_ingredients), 3)
         subset = random.sample(filtered_ingredients, subset_size) if subset_size > 0 else []
         generated_recipe = generate_recipe(subset)
-        print("Subset used for recipe generation:", subset)
 
         return jsonify({
             "ingredients": filtered_ingredients,
-            "generated_recipe": generated_recipe.strip() if generated_recipe else "No recipe generated",
-            "subset_used": subset
+            "subset_used": subset,
+            "generated_recipe": generated_recipe.strip() if generated_recipe else "No recipe generated"
         })
 
     except Exception as e:
