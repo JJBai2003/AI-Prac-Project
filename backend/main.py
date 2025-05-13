@@ -21,8 +21,8 @@ ssl._create_default_https_context = ssl._create_unverified_context
 def load_model():
     model = deeplabv3_resnet101(weights=None, aux_loss=True)
     model.classifier = DeepLabHead(2048, 104)
-    model.load_state_dict(torch.load('deeplabv3_Foodseg103.pth', map_location=torch.device('cpu')))
-    model.eval()
+    model.load_state_dict(torch.load('./deeplabv3_Foodseg103.pth', map_location=torch.device('cpu')))
+    model.eval()  # Ensure the model is in evaluation mode
     return model
 
 
