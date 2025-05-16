@@ -9,10 +9,8 @@ from PIL import Image
 import numpy as np
 import ssl
 
-# Disable SSL verification if needed
 ssl._create_default_https_context = ssl._create_unverified_context
 
-# Image and mask transforms
 def transform_image(image):
     return transforms.Compose([
         transforms.Resize((128, 128)),
@@ -25,7 +23,6 @@ def transform_mask(mask):
     mask = transforms.Resize((128, 128))(mask)
     return torch.tensor(np.array(mask), dtype=torch.long)
 
-# Custom Dataset class for Hugging Face Dataset objects
 class SegmentationDataset(Dataset):
     def __init__(self, hf_dataset, image_transform=None, mask_transform=None):
         self.dataset = hf_dataset
@@ -47,21 +44,17 @@ class SegmentationDataset(Dataset):
 
         return image, mask
 
-# Optional: custom collate to skip broken items
 def collate_fn(batch):
     batch = [item for item in batch if item is not None]
     return torch.utils.data.default_collate(batch)
 
 def main():
-    # Load dataset
     dataset = load_dataset("EduardoPacheco/FoodSeg103")
 
-    # Print dataset structure for verification
     print("\n=== Dataset Structure ===")
     print("Train features:", dataset['train'].features)
     print("Sample item keys:", dataset['train'][0].keys())
 
-    # Initialize datasets
     train_dataset = SegmentationDataset(
         hf_dataset=dataset['train'],
         image_transform=transform_image,
@@ -73,7 +66,6 @@ def main():
         mask_transform=transform_mask
     )
 
-    # Dataloaders
     train_loader = DataLoader(
         train_dataset,
         batch_size=8,
@@ -88,7 +80,6 @@ def main():
         collate_fn=collate_fn
     )
 
-    # Load model
     model = models.segmentation.deeplabv3_resnet50(
         weights=models.segmentation.DeepLabV3_ResNet50_Weights.COCO_WITH_VOC_LABELS_V1,
         aux_loss=True
@@ -99,11 +90,9 @@ def main():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model.to(device)
 
-    # Training setup
     criterion = nn.CrossEntropyLoss(ignore_index=255)
     optimizer = optim.Adam(model.parameters(), lr=0.0001)
 
-    # Training loop
     num_epochs = 10
     for epoch in range(num_epochs):
         model.train()
@@ -126,9 +115,8 @@ def main():
         avg_loss = running_loss / len(train_loader)
         print(f"Epoch [{epoch+1}/{num_epochs}] Avg Loss: {avg_loss:.4f}")
 
-    # Save trained model
     torch.save(model.state_dict(), 'food_segmentation_model.pth')
-    print("\n✅ Training completed successfully!")
+    print("\n Training completed successfully!")
 
 if __name__ == '__main__':
     torch.multiprocessing.freeze_support()

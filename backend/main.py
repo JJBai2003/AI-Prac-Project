@@ -8,7 +8,6 @@ from torchvision.models.segmentation.deeplabv3 import DeepLabHead
 from PIL import Image
 import io
 from flask_cors import CORS
-# from pymongo import MongoClient
 import os
 import random
 from transformers import GPT2Tokenizer, GPT2LMHeadModel
@@ -22,7 +21,7 @@ def load_model():
     model = deeplabv3_resnet101(weights=None, aux_loss=True)
     model.classifier = DeepLabHead(2048, 104)
     model.load_state_dict(torch.load('./deeplabv3_Foodseg103.pth', map_location=torch.device('cpu')))
-    model.eval()  # Ensure the model is in evaluation mode
+    model.eval()  
     return model
 
 
@@ -65,7 +64,7 @@ class_id_to_name = {    0: "background", 1: "candy", 2: "egg tart", 3: "french f
     90: "snow peas", 91: "cabbage", 92: "bean sprouts", 93: "onion", 94: "pepper",
     95: "green beans", 96: "French beans", 97: "king oyster mushroom", 98: "shiitake",
     99: "enoki mushroom", 100: "oyster mushroom", 101: "white button mushroom",
-    102: "salad", 103: "other ingredients" }  # ← Paste your full 104-class dictionary here
+    102: "salad", 103: "other ingredients" } 
 
 # === MongoDB (optional) ===
 # client = MongoClient(os.getenv("MONGODB_URI", "mongodb://localhost:27017"))

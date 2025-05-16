@@ -171,7 +171,7 @@ def main():
 
         avg_loss = running_loss / len(train_loader)
         scheduler.step()
-        print(f"✅ Epoch {epoch+1}/{num_epochs} completed | Avg Loss: {avg_loss:.4f}")
+        print(f"Epoch {epoch+1}/{num_epochs} completed | Avg Loss: {avg_loss:.4f}")
         save_checkpoint(model, optimizer, epoch, avg_loss)
 
         # === Validation ===
@@ -207,7 +207,7 @@ def main():
             break
 
     torch.save(model.state_dict(), 'deeplabv3_Foodseg103.pth')
-    print("🎉 Training completed and model saved!")
+    print("Training completed and model saved!")
 
 if __name__ == '__main__':
     torch.multiprocessing.freeze_support()

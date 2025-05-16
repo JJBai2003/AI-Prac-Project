@@ -4,19 +4,28 @@ import torch
 from sklearn.metrics import *
 
 validation_data = [
-    {"image": "./images/protein_others.jpeg", "ground_truth": ["apple", "pomegranate", "blueberry", "almond", "lemon", "chicken", "beef", "snap peas", "ginger"]},
-    {"image": "./images/salad.jpg", "ground_truth": ["carrots", "ham", "cheddar", "tomato", "cucumbers", "eggs", "green onions"]},
-    {"image": "./images/spaghetti.jpg", "ground_truth": ["noodles"]},
-    {"image": "./images/veggie.png", "ground_truth": ["lettuce", "grape", "tomato", "cucumber", "broccoli", "pepper"]},
-    {
-    "image": "./images/veggie2.jpg",
+    {"image": "./images/protein_others.jpeg", "ground_truth": ["apple", "blueberry", "almond", "lemon", "steak", "ginger", "sauce"]},
+    {"image": "./images/noodle.jpg", "ground_truth": ["noodles"]},
+    {"image": "./images/veggie.png", "ground_truth": ["lettuce", "grape", "tomato", "cucumber", "broccoli", "pepper", "orange"]},
+    {"image": "./images/candy.png", "ground_truth": ["candy", "egg tart", "french fries", "chocolate"]},
+    {"image": "./images/veggie2.jpg",
     "ground_truth": [
-        "carrot", "broccoli", "cauliflower", "tomato", "pepper", "cucumber", "zucchini", "garlic", "potato",
-        "eggplant", "pumpkin", "lettuce", "parsley", "celery",
-        "onion", "radicchio", "basil", "yellow beans"
+        "carrot", "broccoli", "cauliflower", "tomato", "pepper", "cucumber", "garlic", "potato",
+        "eggplant", "lettuce", "onion"
+    ]},
+    {"image": "./images/fruit.png",  
+    "ground_truth": [
+        "orange", "lemon","banana", "mango", "grape", "blueberry", "apple",
+        "peach",
+    ]}, 
+    # image generated from gpt to get the other food items for testing
+    {  "image": "./images/food.png",
+    "ground_truth": [
+        "biscuit", "popcorn", "sausage", "sauce", "avocado", "pizza", "lettuce", "asparagus",
+        "white radish", "pear", "kiwi", "olive", "strawberry", "peach", "almond", "cashew",
+        "walnut", "pasta", "coffee", "cake", "bread", "cherry"
     ]
-}
-
+},
 ]
 
 def detect_ingredients(image_path):
